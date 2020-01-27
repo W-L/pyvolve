@@ -111,6 +111,7 @@ class Model():
             self.params = parameters
         self.name                      = kwargs.get('name', None)               # Can be overwritten through .assign_name()
         self.rate_probs                = kwargs.get('rate_probs', None)         # Default is no rate hetereogeneity
+        self.rateDist                  = kwargs.get('rateDist', None)             # default is no rate het, or probabilities if rate_probs is given
         self.rate_factors              = kwargs.get('rate_factors', np.ones(1)) # Default is no rate hetereogeneity
         self.alpha                     = kwargs.get('alpha', None)
         self.k_gamma                   = kwargs.get('num_categories', 4)
@@ -239,7 +240,7 @@ class Model():
                 self._assign_hetcodon_model_matrices()
             else:
                 self.matrix = MechCodon_Matrix(self.model_type, self.params )()
-        
+
         
         elif 'ecm' in self.model_type:
             self.params = ECM_Sanity(self.model_type, self.params, size = 61)()
