@@ -192,8 +192,14 @@ class Evolver(object):
         self._sim_subtree(self.full_tree)
             
 
-        # Shuffle sequences?
-        self._shuffle_sites()
+        # Shuffle sequences? shuffle randomly or shuffle into dist
+        model = self._obtain_model(self.partitions[0], self.full_tree.model_flag)
+        if model.rateDist is not None:
+            self._shuffle_sites_into_dist(dist=model.rateDist)
+            #self._shuffle_sites()
+            
+        else:
+            self._shuffle_sites()
 
         # Convert Site dictionaries to sequence dictionaries
         self.leaf_seqs = self._convert_site_to_seq_dict(self._leaf_sites)
@@ -264,6 +270,45 @@ class Evolver(object):
                 for record in self._evolved_sites:
                     temp = []
                     for pp in part_pos:
+                        temp.append( self._evolved_sites[record][part_index][pp] )
+                    self._evolved_sites[record][part_index][start:start + size] = temp
+
+        # Apply shuffling to self._leaf_sites
+        for record in self._leaf_sites:
+            self._leaf_sites[record] = self._evolved_sites[record]
+
+
+    def _shuffle_sites_into_dist(self, dist):
+        ''' 
+            Shuffle the sites into the specified dist
+        ''' 
+        start = 0
+        for part_index in range( len(self.partitions) ):            
+            part = self.partitions[part_index]
+            if part._shuffle:
+                size = sum( part.size )
+                # old way
+                #part_pos = np.arange( size ) + start
+                #np.random.shuffle(part_pos)
+                # old way
+
+                part_pos = np.arange( size ) + start
+                for node in self._evolved_sites:
+
+                    seq = self._evolved_sites[node][part_index]
+                    rates = [s.rate for s in seq]
+                    rates = np.asarray(rates)
+                    
+                    # magic trick to match the rates according to dist
+                    # and then use this sorting on the positions to shuffle
+                    # them into place
+                    order = np.argsort(dist, 0)
+                    original_order = np.argsort(order, 0)
+                    newOrder = part_pos[original_order]
+
+                for record in self._evolved_sites:
+                    temp = []
+                    for pp in newOrder:
                         temp.append( self._evolved_sites[record][part_index][pp] )
                     self._evolved_sites[record][part_index][start:start + size] = temp
 
@@ -518,7 +563,7 @@ class Evolver(object):
                 # Grab model info for this partition to get frequency vector for root simulation
                 root_model = self._obtain_model(part, self.full_tree.model_flag)
 
-                # Generate root_sequence and assign the Site a rate class
+
                 for i in range( root_model.num_classes() ):
                     for j in range( part.size[i] ):
                         new_site = Site()
