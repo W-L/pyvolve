@@ -115,12 +115,20 @@ class Partition():
             Note that this is *probability-based!* So if you specified 25% for a category, it is not strictly true that 25% of sites will be in that category, but rather that category will occur with a probability of 25%. 
             
             If no rate heterogeneity, will simply be a list of length 1 containing full size.
+
+            W-L: the probabilities are frequencies if a distribution is given!!!
         '''
-        nc = self._root_model.num_classes()
-        rate_occurrences = np.random.choice(nc, int(self.size), p = self._root_model.rate_probs)          
-        new_size = np.bincount(rate_occurrences, minlength = nc)
+        if self._root_model.rateDist is None:
+            nc = self._root_model.num_classes()
+            rate_occurrences = np.random.choice(nc, int(self.size), p = self._root_model.rate_probs)
+            new_size = np.bincount(rate_occurrences, minlength = nc)
+        
+        else:
+            chunks = self._root_model.rate_probs * self.size
+            new_size = chunks.astype(int)
+        
         assert( sum(new_size) ==  self.size ), "\n\nImproperly divvied up rate heterogeneity."
-        assert( len(new_size) == nc), "\n\nPartition size does not correspond to the number of rate categories. Please report this error."
+        assert( len(new_size) == self._root_model.num_classes()), "\n\nPartition size does not correspond to the number of rate categories. Please report this error."
         self.size = list(new_size)
 
     
